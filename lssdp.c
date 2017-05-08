@@ -731,7 +731,7 @@ static int neighbor_list_add(lssdp_ctx * lssdp, const lssdp_packet packet) {
 	bool is_changed = false;
 	lssdp_nbr * nbr;
 	for (nbr = lssdp->neighbor_list; nbr != NULL; last_nbr = nbr, nbr = nbr->next) {
-		if (strcmp(nbr->location, packet.location) != 0) {
+		if (strcmp(nbr->usn , packet.usn) != 0) {
 			// location is not match
 			continue;
 		}
