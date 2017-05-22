@@ -11,11 +11,11 @@ all: $(BINS)
 packet_listener: packet_listener.o
 	$(CXX) $(CXXFLAGS) -o $@.exe $@.o
 
-client$(EXE): client.o
-	$(CXX) -pthread -static $(CXXFLAGS) -o $@ $< -L.. -llssdp -lncurses -ltinfo -lgpm
+client$(EXE): client.o ../lssdp.o
+	$(CXX) -pthread $(CXXFLAGS) -o $@ ../lssdp.o $< -L.. -lncurses -ltinfo -lgpm
 
-service$(EXE): service.o
-	$(CXX) -static $(CXXFLAGS) -o $@ $< -L.. -llssdp
+service$(EXE): service.o ../lssdp.o
+	$(CXX) $(CXXFLAGS) -o $@ ../lssdp.o $< 
 
 clean:
 	rm -rf *.o $(BINS)
