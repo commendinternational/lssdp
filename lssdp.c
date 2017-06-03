@@ -153,14 +153,14 @@ int lssdp_socket_create(lssdp_ctx * lssdp) {
 	*  are using IPv4 or IPv6.
 	*/
 	if ( multicastAddr->ai_family  == PF_INET &&
-	        multicastAddr->ai_addrlen == sizeof(struct sockaddr_in6) ) /* IPv4 */
+	        multicastAddr->ai_addrlen == sizeof(struct sockaddr_in) ) /* IPv4 */
 	{
 		lssdp_debug("Binding IPv4\n");
 		struct ip_mreq multicastRequest;  /* Multicast address join structure */
 
 		/* Specify the multicast group */
 		memcpy(&multicastRequest.imr_multiaddr,
-		       &((struct sockaddr_in6*)(multicastAddr->ai_addr))->sin6_addr,
+		       &((struct sockaddr_in*)(multicastAddr->ai_addr))->sin_addr,
 		       sizeof(multicastRequest.imr_multiaddr));
 
 		/* Accept multicast from any interface */
