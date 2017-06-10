@@ -67,6 +67,7 @@ void lssdp_init(lssdp_ctx * lssdp) {
 	lssdp->config.multicastPort  = "1900";
 	lssdp->config.ADDR_LOCALHOST = "127.0.0.1";
 	lssdp->config.ADDR_MULTICAST = "239.255.255.250";
+	lssdp->config.MULTICAST_IF = NULL;
 	lssdp->header.max_age = 10;
 	lssdp->neighbor_list = NULL;
 }
@@ -482,12 +483,25 @@ static int send_multicast_data(const char * data , lssdp_ctx*lssdp) {
 
 
 	/* set the sending interface */
-	in_addr_t iface = INADDR_ANY;
+	struct ip_mreqn addr = {{0}};
 
-	if(setsockopt (sock,
+	if (lssdp->config.MULTICAST_IF) {
+		addr.imr_ifindex = if_nametoindex(lssdp->config.MULTICAST_IF);
+
+		if (!addr.imr_ifindex) {
+			lssdp_error("Interface %s not found\n", lssdp->config.MULTICAST_IF);
+			goto fail_and_close;
+		}
+	} else
+		addr.imr_ifindex = 0; /* any interface = old behavior (default) */
+
+	lssdp_debug("Interface %s has index %d\n", lssdp->config.MULTICAST_IF, addr.imr_ifindex);
+
+	if (setsockopt(sock,
 	               multicastAddr2->ai_family == PF_INET6 ? IPPROTO_IPV6 : IPPROTO_IP,
 	               multicastAddr2->ai_family == PF_INET6 ? IPV6_MULTICAST_IF : IP_MULTICAST_IF,
-	               (char*)&iface, sizeof(iface)) != 0)  {
+	               multicastAddr2->ai_family == PF_INET6 ? &addr.imr_ifindex : &addr,
+	               multicastAddr2->ai_family == PF_INET6 ? sizeof(addr.imr_ifindex) : sizeof(addr)) != 0) {
 		lssdp_error("Cannot set multicast interface");
 		goto fail_and_close;
 	}

@@ -31,6 +31,7 @@ typedef struct lssdp_config {
 
 	const char * ADDR_LOCALHOST;
 	const char * ADDR_MULTICAST;
+	const char * MULTICAST_IF;
 
 
 } lssdp_config;
