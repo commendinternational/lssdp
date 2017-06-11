@@ -438,7 +438,7 @@ static int send_multicast_data(const char * data , lssdp_ctx*lssdp) {
 
 	struct addrinfo*  multicastAddr2 = NULL;     /* Multicast Address */
 	struct addrinfo hints = { 0 };    /* Hints for name lookup */
-	int  multicastTTL =255;           /* Arg: TTL of multicast packets */
+	int  multicastTTL = 255;          /* Arg: TTL of multicast packets */
 
 	int sock;
 	hints.ai_family   = PF_UNSPEC;
@@ -461,8 +461,8 @@ static int send_multicast_data(const char * data , lssdp_ctx*lssdp) {
 
 
 	/* Create socket for sending multicast datagrams */
-	if ( (sock = socket(multicastAddr2->ai_family, multicastAddr2->ai_socktype,
-	                    0)) < 0 ) {
+	if ((sock = socket(multicastAddr2->ai_family, multicastAddr2->ai_socktype,
+	                    0)) < 0) {
 		lssdp_error("Cannot create multicast socket: ");
 		goto fail;
 	}
@@ -472,13 +472,21 @@ static int send_multicast_data(const char * data , lssdp_ctx*lssdp) {
 	setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &loop, sizeof(loop))  ;
 
 	/* Set TTL of multicast packet */
-
-	if ( setsockopt(sock,
-	                multicastAddr2->ai_family == PF_INET6 ? IPPROTO_IPV6        : IPPROTO_IP,
-	                multicastAddr2->ai_family == PF_INET6 ? IPV6_MULTICAST_HOPS : IP_MULTICAST_TTL,
-	                (char*) &multicastTTL, sizeof(multicastTTL)) != 0 ) {
-		lssdp_error("Cannot set multicast ttl: ");
-		goto fail_and_close;
+	if (multicastAddr2->ai_family == PF_INET6) {
+		if (setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
+			(char*) &multicastTTL, sizeof(multicastTTL)) != 0) {
+			lssdp_error("Cannot set multicast hops: ");
+			goto fail_and_close;
+		}
+	} else if (multicastAddr2->ai_family == PF_INET) {
+		if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL,
+			&multicastTTL, sizeof(multicastTTL)) != 0) {
+			lssdp_error("Cannot set multicast TTL: ");
+			goto fail_and_close;
+		}
+	} else {
+		lssdp_error("Unknown protocol, cannot set multicast TTL: ");
+		goto fail;
 	}
 
 
@@ -497,17 +505,21 @@ static int send_multicast_data(const char * data , lssdp_ctx*lssdp) {
 
 	lssdp_debug("Interface %s has index %d\n", lssdp->config.MULTICAST_IF, addr.imr_ifindex);
 
-	if (setsockopt(sock,
-	               multicastAddr2->ai_family == PF_INET6 ? IPPROTO_IPV6 : IPPROTO_IP,
-	               multicastAddr2->ai_family == PF_INET6 ? IPV6_MULTICAST_IF : IP_MULTICAST_IF,
-	               multicastAddr2->ai_family == PF_INET6 ? &addr.imr_ifindex : &addr,
-	               multicastAddr2->ai_family == PF_INET6 ? sizeof(addr.imr_ifindex) : sizeof(addr)) != 0) {
-		lssdp_error("Cannot set multicast interface");
-		goto fail_and_close;
+	if (multicastAddr2->ai_family == PF_INET6) {
+		if (setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+			&addr.imr_ifindex, sizeof(addr.imr_ifindex)) != 0) {
+			lssdp_error("Cannot set multicast interface");
+			goto fail_and_close;
+		}
+	} else if (multicastAddr2->ai_family == PF_INET) {
+		if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, &addr,sizeof(addr)) != 0) {
+			lssdp_error("Cannot set multicast interface");
+			goto fail_and_close;
+		}
+	} else {
+		lssdp_error("Unknown protocol, cannot set multicast interface: ");
+		goto fail;
 	}
-
-
-
 
 	// 5. send data
 	if (sendto(sock, data, data_len, 0, multicastAddr2->ai_addr,
