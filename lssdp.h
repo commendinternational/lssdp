@@ -9,6 +9,14 @@ extern "C"
 {
 #endif
 
+/* Some platforms use IPV6_JOIN_GROUP instead if
+ * IPV6_ADD_MEMBERSHIP. The semantics are same, though. */
+#ifndef IPV6_ADD_MEMBERSHIP
+#ifdef IPV6_JOIN_GROUP
+#define IPV6_ADD_MEMBERSHIP IPV6_JOIN_GROUP
+#endif /* IPV6_JOIN_GROUP */
+#endif /* !IPV6_ADD_MEMBERSHIP */
+	
 #define LSSDP_IP_LEN                128
 #define LSSDP_FIELD_LEN             128
 #define LSSDP_LOCATION_LEN          256

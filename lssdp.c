@@ -133,6 +133,15 @@ int lssdp_socket_create(lssdp_ctx * lssdp) {
 		goto fail_and_close;
 	}
 
+#if __APPLE__
+	/* lose the pesky "Port already in use" error message */
+	if (setsockopt(lssdp->sock,SOL_SOCKET,SO_REUSEPORT,(char*)&yes,
+				   sizeof(int)) == -1) {
+		lssdp_error("Failed to set socket option\n");
+		goto fail_and_close;
+	}
+#endif
+	
 	unsigned char loop = 1;
 	setsockopt(lssdp->sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
 
@@ -163,9 +172,14 @@ int lssdp_socket_create(lssdp_ctx * lssdp) {
 		memcpy(&multicastRequest.imr_multiaddr,
 		       &((struct sockaddr_in*)(multicastAddr->ai_addr))->sin_addr,
 		       sizeof(multicastRequest.imr_multiaddr));
-
+		
+#if __APPLE__
+		/* Accept multicast from apple-wifi specified interface: this is like "must be" for iOS platforms */
+		multicastRequest.imr_interface.s_addr = if_nametoindex("en0");
+#else
 		/* Accept multicast from any interface */
 		multicastRequest.imr_interface.s_addr = htonl(INADDR_ANY);
+#endif
 
 		/* Join the multicast address */
 		if ( setsockopt(lssdp->sock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
@@ -185,9 +199,13 @@ int lssdp_socket_create(lssdp_ctx * lssdp) {
 		       &((struct sockaddr_in6*)(multicastAddr->ai_addr))->sin6_addr,
 		       sizeof(multicastRequest.ipv6mr_multiaddr));
 
+#if __APPLE__
+		/* Accept multicast from apple-wifi specified interface: this is like "must be" for iOS platforms */
+		multicastRequest.ipv6mr_interface = if_nametoindex("en0");
+#else
 		/* Accept multicast from any interface */
 		multicastRequest.ipv6mr_interface = 0;
-
+#endif
 		/* Join the multicast address */
 		if ( setsockopt(lssdp->sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
 		                (char*) &multicastRequest, sizeof(multicastRequest)) != 0 ) {
@@ -467,10 +485,31 @@ static int send_multicast_data(const char * data , lssdp_ctx*lssdp) {
 		goto fail;
 	}
 
-
 	int loop = 1;
 	setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &loop, sizeof(loop))  ;
 
+#if __APPLE__
+	/* Set TTL of multicast packet */
+	if ( setsockopt(sock,
+					multicastAddr2->ai_family == PF_INET6 ? IPPROTO_IPV6        : IPPROTO_IP,
+					multicastAddr2->ai_family == PF_INET6 ? IPV6_MULTICAST_HOPS : IP_MULTICAST_TTL,
+					(char*) &multicastTTL, sizeof(multicastTTL)) != 0 ) {
+		lssdp_error("Cannot set multicast ttl: ");
+		goto fail_and_close;
+	}
+	
+	
+	/* set the sending interface */
+	in_addr_t iface = if_nametoindex("en0");
+	
+	if(setsockopt (sock,
+				   multicastAddr2->ai_family == PF_INET6 ? IPPROTO_IPV6 : IPPROTO_IP,
+				   multicastAddr2->ai_family == PF_INET6 ? IPV6_MULTICAST_IF : IP_MULTICAST_IF,
+				   (char*)&iface, sizeof(iface)) != 0)  {
+		lssdp_error("Cannot set multicast interface");
+		goto fail_and_close;
+	}
+#else
 	/* Set TTL of multicast packet */
 	if (multicastAddr2->ai_family == PF_INET6) {
 		if (setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
@@ -520,7 +559,8 @@ static int send_multicast_data(const char * data , lssdp_ctx*lssdp) {
 		lssdp_error("Unknown protocol, cannot set multicast interface: ");
 		goto fail;
 	}
-
+#endif
+	
 	// 5. send data
 	if (sendto(sock, data, data_len, 0, multicastAddr2->ai_addr,
 	           multicastAddr2->ai_addrlen) == -1) {
@@ -886,15 +926,15 @@ static int get_colon_index(const char * string, size_t start, size_t end) {
 	size_t i;
 	for (i = start; i <= end; i++) {
 		if (string[i] == ':') {
-			return i;
+			return (int)i;
 		}
 	}
 	return -1;
 }
 
 static int trim_spaces(const char * string, size_t * start, size_t * end) {
-	int i = *start;
-	int j = *end;
+	int i = (int)*start;
+	int j = (int)*end;
 
 	while (i <= *end   && (!isprint(string[i]) || isspace(string[i]))) i++;
 	while (j >= *start && (!isprint(string[j]) || isspace(string[j]))) j--;
