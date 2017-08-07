@@ -70,6 +70,8 @@ void lssdp_init(lssdp_ctx * lssdp) {
 	lssdp->config.MULTICAST_IF = NULL;
 	lssdp->header.max_age = 10;
 	lssdp->neighbor_list = NULL;
+	lssdp->neighbor_list_changed_callback = NULL;
+	lssdp->packet_received_callback = NULL;
 }
 
 
