@@ -892,7 +892,7 @@ int lssdp_neighbor_check_timeout(lssdp_ctx * lssdp) {
 
 
 	while (nbr != NULL) {
-		long pass_time = current_time - nbr->update_time;
+		long long pass_time = current_time - nbr->update_time;
 		if (pass_time < nbr->max_age*1000) {
 			prev = nbr;
 			nbr  = nbr->next;
@@ -900,7 +900,7 @@ int lssdp_neighbor_check_timeout(lssdp_ctx * lssdp) {
 		}
 
 		is_changed = true;
-		fprintf(stderr,"remove timeout SSDP neighbor: %s (%s) (%ldms) maxAGE:%d\n",
+		fprintf(stderr,"remove timeout SSDP neighbor: %s (%s) (%lldms) maxAGE:%d\n",
 		        nbr->sm_id, nbr->location, pass_time, nbr->max_age);
 
 		if (prev == NULL) {
