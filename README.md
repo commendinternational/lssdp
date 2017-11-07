@@ -66,10 +66,6 @@ lssdp context
 
 **header.location = prefix + domain + suffix** - [http://] + IP + [:PORT/URI]
 
-**header.sm_id** - Optional field.
-
-**header.device_type** - Optional field.
-
 **network_interface_changed_callback** - when interface is changed, this callback would be invoked.
 
 **neighbor_list_changed_callback** - when neighbor list is changed, this callback would be invoked.

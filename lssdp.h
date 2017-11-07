@@ -72,9 +72,6 @@ typedef struct lssdp_packet {
 	char usn         [LSSDP_FIELD_LEN];      // Unique Service Name
 	char location    [LSSDP_LOCATION_LEN];   // Location
 
-	/* Additional SSDP Header Fields */
-	char            sm_id       [LSSDP_FIELD_LEN];
-	char            device_type [LSSDP_FIELD_LEN];
 	int max_age;
 	long long       update_time;
 } lssdp_packet;
@@ -89,9 +86,7 @@ struct t_header {
 	char unique_service_name [LSSDP_FIELD_LEN];  // Unique Service Name: MAC or User Name
 	int max_age;
 	struct t_location location;
-	/* Additional SSDP Header Fields */
-	char sm_id       [LSSDP_FIELD_LEN];
-	char device_type [LSSDP_FIELD_LEN];
+	char server              [LSSDP_FIELD_LEN]; // software product/version implementing LSSDP
 };
 
 
@@ -109,7 +104,6 @@ typedef struct lssdp_ctx {
 	int (* neighbor_list_changed_callback)     (struct lssdp_ctx * lssdp);
 	int (* packet_received_callback)           (struct lssdp_ctx * lssdp,
 	        const char * packet, size_t packet_len);
-
 } lssdp_ctx;
 
 

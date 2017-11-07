@@ -47,8 +47,6 @@ void print_lssdp_packet(lssdp_packet &parsed_packet) {
 	printf("ST: %s\n",parsed_packet.st);
 	printf("USN: %s\n",parsed_packet.usn);
 	printf("LOCATION: %s\n",parsed_packet.location);
-	printf("SM_ID: %s\n",parsed_packet.sm_id);
-	printf("DEVICE: %s\n",parsed_packet.device_type);
 	printf("NTS: %s\n",parsed_packet.nts);
 	printf("---------------------------------------------------\n");
 }
@@ -91,8 +89,6 @@ int main( int argc, char *argv[] ) {
 	strncpy(lssdp.header.location.suffix,":8082\0",LSSDP_FIELD_LEN);
 
 	strncpy(lssdp.header.search_target,"commend_switchbox\0",LSSDP_FIELD_LEN);
-	strncpy(lssdp.header.device_type,"commend_switchbox\0",LSSDP_FIELD_LEN);
-	strncpy(lssdp.header.sm_id,"commend_switchbox\0",LSSDP_FIELD_LEN);
 	if(argc >= 2) {
 		strncpy(lssdp.header.unique_service_name,argv[1],LSSDP_FIELD_LEN);
 	} else {

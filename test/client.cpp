@@ -237,8 +237,6 @@ void mainLoop() {
 	strncpy(lssdp.header.location.suffix,":8082\0",LSSDP_FIELD_LEN);
 
 	strncpy(lssdp.header.search_target,"commend_switchbox\0",LSSDP_FIELD_LEN);
-	strncpy(lssdp.header.device_type,"commend_switchbox\0",LSSDP_FIELD_LEN);
-	strncpy(lssdp.header.sm_id,"commend_switchbox\0",LSSDP_FIELD_LEN);
 	strncpy(lssdp.header.unique_service_name,"Barcode",LSSDP_FIELD_LEN);
 	lssdp_socket_create(&lssdp);
 	lssdp_send_msearch(&lssdp);

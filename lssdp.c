@@ -63,7 +63,6 @@ static int lssdp_log(int level, int line, const char * func,
 
 
 void lssdp_init(lssdp_ctx * lssdp) {
-
 	lssdp->config.multicastPort  = "1900";
 	lssdp->config.ADDR_LOCALHOST = "127.0.0.1";
 	lssdp->config.ADDR_MULTICAST = "239.255.255.250";
@@ -72,6 +71,7 @@ void lssdp_init(lssdp_ctx * lssdp) {
 	lssdp->neighbor_list = NULL;
 	lssdp->neighbor_list_changed_callback = NULL;
 	lssdp->packet_received_callback = NULL;
+	strncpy(lssdp->header.server, "OS/1.0 LSSDP/1.0", LSSDP_FIELD_LEN);
 }
 
 
@@ -320,11 +320,12 @@ int lssdp_send_msearch(lssdp_ctx * lssdp) {
 	         "MAN:\"ssdp:discover\"\r\n"
 	         "MX:1\r\n"
 	         "ST:%s\r\n"
-	         "USER-AGENT:OS/version product/version\r\n"
+	         "USER-AGENT:%s\r\n"
 	         "\r\n",
 	         HEADER_MSEARCH,              // HEADER
 	         lssdp->config.ADDR_MULTICAST, lssdp->port, // HOST
-	         lssdp->header.search_target         // ST (Search Target)
+	         lssdp->header.search_target,         // ST (Search Target)
+	         lssdp->header.server
 	        );
 
 	// 2. send M-SEARCH to each interface
@@ -358,8 +359,6 @@ int lssdp_send_byebye(lssdp_ctx * lssdp) {
 	         "NT:%s\r\n"
 	         "NTS:ssdp:byebye\r\n"
 	         "USN:%s\r\n"
-	         "SM_ID:%s\r\n"
-	         "DEV_TYPE:%s\r\n"
 	         "\r\n",
 	         HEADER_NOTIFY,                              // HEADER
 	         lssdp->config.ADDR_MULTICAST, lssdp->port,  // HOST
@@ -368,9 +367,7 @@ int lssdp_send_byebye(lssdp_ctx * lssdp) {
 	         lssdp->header.location.domain,              // LOCATION
 	         lssdp->header.location.suffix,
 	         lssdp->header.search_target,                // NT (Notify Type)
-	         lssdp->header.unique_service_name,          // USN
-	         lssdp->header.sm_id,                        // SM_ID    (addtional field)
-	         lssdp->header.device_type                   // DEV_TYPE (addtional field)
+	         lssdp->header.unique_service_name           // USN
 	        );
 
 	// send NOTIFY
@@ -401,12 +398,10 @@ int lssdp_send_notify(lssdp_ctx * lssdp) {
 	         "HOST:%s:%d\r\n"
 	         "CACHE-CONTROL:max-age=%d\r\n"
 	         "LOCATION:%s%s%s\r\n"
-	         "SERVER:OS/version product/version\r\n"
+	         "SERVER:%s\r\n"
 	         "NT:%s\r\n"
 	         "NTS:ssdp:alive\r\n"
 	         "USN:%s\r\n"
-	         "SM_ID:%s\r\n"
-	         "DEV_TYPE:%s\r\n"
 	         "\r\n",
 	         HEADER_NOTIFY,                              // HEADER
 	         lssdp->config.ADDR_MULTICAST, lssdp->port,  // HOST
@@ -414,10 +409,9 @@ int lssdp_send_notify(lssdp_ctx * lssdp) {
 	         lssdp->header.location.prefix,              // LOCATION
 	         lssdp->header.location.domain,              // LOCATION
 	         lssdp->header.location.suffix,
+	         lssdp->header.server,
 	         lssdp->header.search_target,                // NT (Notify Type)
-	         lssdp->header.unique_service_name,          // USN
-	         lssdp->header.sm_id,                        // SM_ID    (addtional field)
-	         lssdp->header.device_type                   // DEV_TYPE (addtional field)
+	         lssdp->header.unique_service_name           // USN
 	        );
 
 	// send NOTIFY
@@ -597,21 +591,18 @@ static int lssdp_send_response(lssdp_ctx * lssdp, struct sockaddr_in6 address) {
 	                            "DATE:\r\n"
 	                            "EXT:\r\n"
 	                            "LOCATION:%s%s%s\r\n"
-	                            "SERVER:OS/version product/version\r\n"
+	                            "SERVER:%s\r\n"
 	                            "ST:%s\r\n"
 	                            "USN:%s\r\n"
-	                            "SM_ID:%s\r\n"
-	                            "DEV_TYPE:%s\r\n"
 	                            "\r\n",
 	                            HEADER_RESPONSE,                     // HEADER
 	                            lssdp->header.max_age,
 	                            lssdp->header.location.prefix,              // LOCATION
 	                            lssdp->header.location.domain,
 	                            lssdp->header.location.suffix,
+	                            lssdp->header.server,
 	                            lssdp->header.search_target,                // ST (Search Target)
-	                            lssdp->header.unique_service_name,          // USN
-	                            lssdp->header.sm_id,                        // SM_ID    (addtional field)
-	                            lssdp->header.device_type                   // DEV_TYPE (addtional field)
+	                            lssdp->header.unique_service_name           // USN
 	                           );
 
 	printf("Setting Port Address\n");
@@ -761,20 +752,6 @@ static int parse_field_line(const char * data, size_t start, size_t end,
 		return 0;
 	}
 
-	if (field_len == strlen("sm_id")
-	        && strncasecmp(field, "sm_id", field_len) == 0) {
-		memcpy(packet->sm_id, value,
-		       value_len < LSSDP_FIELD_LEN ? value_len : LSSDP_FIELD_LEN - 1);
-		return 0;
-	}
-
-	if (field_len == strlen("dev_type")
-	        && strncasecmp(field, "dev_type", field_len) == 0) {
-		memcpy(packet->device_type, value,
-		       value_len < LSSDP_FIELD_LEN ? value_len : LSSDP_FIELD_LEN - 1);
-		return 0;
-	}
-
 	if (field_len == strlen("CACHE-CONTROL")
 	        && strncasecmp(field, "CACHE-CONTROL", field_len) == 0) {
 		if (strncasecmp(value, "max-age=", 8) == 0) {
@@ -813,22 +790,6 @@ static int neighbor_list_add(lssdp_ctx * lssdp, const lssdp_packet packet) {
 			is_changed = true;
 		}
 
-		// sm_id
-		if (strcmp(nbr->sm_id, packet.sm_id) != 0) {
-			lssdp_debug("neighbor sm_id is changed. (%s -> %s)\n", nbr->sm_id,
-			            packet.sm_id);
-			memcpy(nbr->sm_id, packet.sm_id, LSSDP_FIELD_LEN);
-			is_changed = true;
-		}
-
-		// device type
-		if (strcmp(nbr->device_type, packet.device_type) != 0) {
-			lssdp_debug("neighbor device_type is changed. (%s -> %s)\n", nbr->device_type,
-			            packet.device_type);
-			memcpy(nbr->device_type, packet.device_type, LSSDP_FIELD_LEN);
-			is_changed = true;
-		}
-
 		// update_time
 		nbr->update_time = packet.update_time;
 		nbr->max_age = packet.max_age;
@@ -847,8 +808,6 @@ static int neighbor_list_add(lssdp_ctx * lssdp, const lssdp_packet packet) {
 
 	// 2. setup neighbor
 	memcpy(nbr->usn,         packet.usn,         LSSDP_FIELD_LEN);
-	memcpy(nbr->sm_id,       packet.sm_id,       LSSDP_FIELD_LEN);
-	memcpy(nbr->device_type, packet.device_type, LSSDP_FIELD_LEN);
 	memcpy(nbr->location,    packet.location,    LSSDP_LOCATION_LEN);
 	nbr->update_time = packet.update_time;
 	nbr->max_age = packet.max_age;
