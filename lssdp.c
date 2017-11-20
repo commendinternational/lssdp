@@ -355,17 +355,18 @@ int lssdp_send_byebye(lssdp_ctx * lssdp) {
 	         "HOST:%s:%d\r\n"
 	         "CACHE-CONTROL:max-age=%d\r\n"
 	         "LOCATION:%s%s%s\r\n"
-	         "SERVER:OS/version product/version\r\n"
+	         "SERVER:%s\r\n"
 	         "NT:%s\r\n"
 	         "NTS:ssdp:byebye\r\n"
 	         "USN:%s\r\n"
 	         "\r\n",
 	         HEADER_NOTIFY,                              // HEADER
 	         lssdp->config.ADDR_MULTICAST, lssdp->port,  // HOST
-	         lssdp->header.max_age,              // LOCATION
+	         lssdp->header.max_age,                      // CACHE-CONTROL
 	         lssdp->header.location.prefix,              // LOCATION
 	         lssdp->header.location.domain,              // LOCATION
 	         lssdp->header.location.suffix,
+	         lssdp->header.server,                       // SERVER
 	         lssdp->header.search_target,                // NT (Notify Type)
 	         lssdp->header.unique_service_name           // USN
 	        );
