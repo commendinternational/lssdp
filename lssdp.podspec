@@ -1,11 +1,11 @@
 Pod::Spec.new do |s|
   s.name             = "lssdp"
-  s.version          = "1.0.2"
+  s.version          = "1.0.3"
   s.summary          = "The open source lssdp library."
   s.homepage         = "https://github.com/commendinternational/lssdp"
   s.license          = 'Code is MIT.'
   s.author           = "yodakohl" 
-  s.source           = { :git => "https://github.com/commendinternational/lssdp.git" , :tag => 'master' }
+  s.source           = { :git => "https://github.com/commendinternational/lssdp.git" , :tag => 'iOS/1.0.3' }
   s.social_media_url = 'https://commend.com'
 
   s.platform     = :ios, '9.0'
