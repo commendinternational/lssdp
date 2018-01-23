@@ -57,7 +57,7 @@ static int parse_field_line(const char * data, size_t start, size_t end,
                             lssdp_packet * packet);
 static int get_colon_index(const char * string, size_t start, size_t end);
 static int trim_spaces(const char * string, size_t * start, size_t * end);
-static long long get_current_time();
+static long long get_current_time(void);
 static int lssdp_log(int level, int line, const char * func,
                      const char * format, ...);
 
@@ -160,12 +160,16 @@ int lssdp_socket_create(lssdp_ctx * lssdp) {
 		goto fail_and_close;
 	}
 
+    bool ipv4 = multicastAddr->ai_family  == PF_INET &&
+        multicastAddr->ai_addrlen == sizeof(struct sockaddr_in); /* IPv4 */
+    
+    bool ipv6 = multicastAddr->ai_family  == PF_INET6 &&
+        multicastAddr->ai_addrlen == sizeof(struct sockaddr_in6); /* IPv6 */
 
 	/* Join the multicast group. We do this seperately depending on whether we
 	*  are using IPv4 or IPv6.
 	*/
-	if ( multicastAddr->ai_family  == PF_INET &&
-	        multicastAddr->ai_addrlen == sizeof(struct sockaddr_in) ) /* IPv4 */
+	if (ipv4) /* IPv4 */
 	{
 		lssdp_debug("Binding IPv4\n");
 		struct ip_mreq multicastRequest;  /* Multicast address join structure */
@@ -177,7 +181,7 @@ int lssdp_socket_create(lssdp_ctx * lssdp) {
 		
 #if __APPLE__
 		/* Accept multicast from apple-wifi specified interface: this is like "must be" for iOS platforms */
-		multicastRequest.imr_interface.s_addr = if_nametoindex("en0");
+		multicastRequest.imr_interface.s_addr = ipv6 ? if_nametoindex("en0") : htonl(INADDR_ANY);
 #else
 		/* Accept multicast from any interface */
 		multicastRequest.imr_interface.s_addr = htonl(INADDR_ANY);
@@ -190,8 +194,7 @@ int lssdp_socket_create(lssdp_ctx * lssdp) {
 			goto fail_and_close;
 		}
 	}
-	else if ( multicastAddr->ai_family  == PF_INET6 &&
-	          multicastAddr->ai_addrlen == sizeof(struct sockaddr_in6) ) /* IPv6 */
+	else if (ipv6) /* IPv6 */
 	{
 		lssdp_debug("Binding IPv6\n");
 		struct ipv6_mreq multicastRequest;  /* Multicast address join structure */
@@ -203,7 +206,7 @@ int lssdp_socket_create(lssdp_ctx * lssdp) {
 
 #if __APPLE__
 		/* Accept multicast from apple-wifi specified interface: this is like "must be" for iOS platforms */
-		multicastRequest.ipv6mr_interface = if_nametoindex("en0");
+		multicastRequest.ipv6mr_interface = ipv6 ? if_nametoindex("en0") : htonl(INADDR_ANY);
 #else
 		/* Accept multicast from any interface */
 		multicastRequest.ipv6mr_interface = 0;
@@ -497,7 +500,7 @@ static int send_multicast_data(const char * data , lssdp_ctx*lssdp) {
 	
 	
 	/* set the sending interface */
-	in_addr_t iface = if_nametoindex("en0");
+	in_addr_t iface = multicastAddr2->ai_family == PF_INET6 ? if_nametoindex("en0") : htonl(INADDR_ANY);
 	
 	if(setsockopt (sock,
 				   multicastAddr2->ai_family == PF_INET6 ? IPPROTO_IPV6 : IPPROTO_IP,
