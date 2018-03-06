@@ -33,6 +33,18 @@ android {
             outputFileName = "${archivesBaseName}-${version}.aar"
         }
     }
+
+    task copyLssdpFiles {
+        description 'copy lssdp from root of project'
+        copy {
+            from '../..'
+            include 'lssdp.h'
+            include 'lssdp.c'
+            into 'src/main/cpp'
+        }
+    }
+
+    preBuild.dependsOn copyLssdpFiles
 }
 
 
