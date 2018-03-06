@@ -1,4 +1,5 @@
 #include "service.h"
+#include "lssdp.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,14 +7,13 @@
 #include <errno.h>
 #include <unistd.h>     // select
 #include <sys/time.h>   // gettimeofday
-#include "lssdp.h"
 #include <string>
 #include <signal.h>
 #include <jni.h>
 #include <android/log.h>
 
 
-#define RESEND_INTERVAL 5
+#define RESEND_INTERVAL 2
 
 JNIEnv *jenv_service;
 static bool done = false; // flag to request end of main loop thread
@@ -74,7 +74,7 @@ int launchServer(const char* uuid, const char* ipv6Address, const char* ipv4Addr
     lssdp.port = 1900;
 
     //  CACHE-CONTROL
-    lssdp.header.max_age = 60;
+    lssdp.header.max_age = RESEND_INTERVAL;
     //  LOCATION IPv6
     strncpy(lssdp.header.location.prefix,"http://",LSSDP_FIELD_LEN);
     strncpy(lssdp.header.location.domain,ipv4Address,LSSDP_FIELD_LEN);
@@ -107,7 +107,7 @@ int launchServer(const char* uuid, const char* ipv6Address, const char* ipv4Addr
         FD_SET(lssdp.sock, &fs);
         struct timeval tv;
         tv.tv_sec = 0;
-        tv.tv_usec = 500 * 1000;   // 500 ms
+        tv.tv_usec = (RESEND_INTERVAL * 10) * 1000;
 
         if((get_current_time() - timelast) > RESEND_INTERVAL*1000) {
             timelast = get_current_time();

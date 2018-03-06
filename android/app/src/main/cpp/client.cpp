@@ -1,11 +1,3 @@
-//
-//  test.cpp
-//  discovery
-//
-//  Created by ministerq on 23.05.2017.
-//  Copyright © 2017 commend. All rights reserved.
-//
-
 #include "client.h"
 #include "lssdp.h"
 
@@ -21,6 +13,8 @@
 #include <iostream>
 #include <jni.h>
 #include <android/log.h>
+
+#define RESEND_INTERVAL 2
 
 using namespace std;
 
@@ -145,7 +139,7 @@ int launchClient(const char* uuid, bool ipV6Enabled) {
         FD_SET(lssdp.sock, &fs);
         struct timeval tv;
         tv.tv_sec = 0;
-        tv.tv_usec = 5 * 1000;   // 500 ms
+        tv.tv_usec = (RESEND_INTERVAL * 10) * 1000;
 
         if(lssdp_neighbor_check_timeout(&lssdp) != 0) {
             return EXIT_FAILURE;
