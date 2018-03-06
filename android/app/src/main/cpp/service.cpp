@@ -1,3 +1,5 @@
+#include "service.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,7 +51,7 @@ static void android_log(const char * file, const char * tag, int level,
 }
 
 
-int launchServer(const char* uuid, const char* ipv6Address, const char* ipv4Address, int localPort) {
+int launchServer(const char* uuid, const char* ipv6Address, const char* ipv4Address, int localPort, bool ipV6Enabled) {
 
     lssdp_set_log_callback(android_log);
 
@@ -64,8 +66,13 @@ int launchServer(const char* uuid, const char* ipv6Address, const char* ipv4Addr
     lssdp.config.MULTICAST_IF = "wlan0";
 
     //  HOST
-    lssdp.config.ADDR_MULTICAST = "FF02::C";
+    if (ipV6Enabled) {
+        lssdp.config.ADDR_MULTICAST = UPNP_IPV6;
+    } else {
+        lssdp.config.ADDR_MULTICAST = UPNP_IPV4;
+    }
     lssdp.port = 1900;
+
     //  CACHE-CONTROL
     lssdp.header.max_age = 60;
     //  LOCATION IPv6
@@ -130,14 +137,17 @@ Java_com_commend_lssdplib_Lssdp_startLssdpService(
         jstring uuid,
         jstring ipv6Address,
         jstring ipv4Address,
-        jint    localPort) {
+        jint    localPort,
+        jboolean ipV6Enabled) {
 
     jenv_service = env;
     const char* ipv6AddressNative = env->GetStringUTFChars(ipv6Address, 0);
     const char* ipv4AddressNative = env->GetStringUTFChars(ipv4Address, 0);
     const char* uuidNative = env->GetStringUTFChars(uuid, 0);
     int localPortNative = (int)localPort;
-    int proc = launchServer(uuidNative, ipv6AddressNative, ipv4AddressNative, localPortNative);
+    bool ipV6EnabledNative = (bool) ipV6Enabled;
+
+    int proc = launchServer(uuidNative, ipv6AddressNative, ipv4AddressNative, localPortNative, ipV6EnabledNative);
 
     return proc;
 }

@@ -89,7 +89,7 @@ int neighbor_list_changed(lssdp_ctx *ctx) {
 }
 
 
-int launchClient(const char* uuid) {
+int launchClient(const char* uuid, bool ipV6Enabled) {
 
     lssdp_set_log_callback(android_log);
 
@@ -104,8 +104,13 @@ int launchClient(const char* uuid) {
     lssdp.config.MULTICAST_IF = "wlan0";
 
     //  HOST
-    lssdp.config.ADDR_MULTICAST = "FF02::C";
+    if (ipV6Enabled) {
+        lssdp.config.ADDR_MULTICAST = UPNP_IPV6;
+    } else {
+        lssdp.config.ADDR_MULTICAST = UPNP_IPV4;
+    }
     lssdp.port = 1900;
+
 
     //  CACHE-CONTROL
     lssdp.header.max_age = 60;
@@ -186,13 +191,15 @@ void
 Java_com_commend_lssdplib_Lssdp_startLssdpClient(
         JNIEnv *env,
         jobject obj,
-        jstring uuid) {
+        jstring uuid,
+        jboolean ipV6Enabled) {
 
     jobj = obj;
     jenv = env;
     const char* uuidNative = env->GetStringUTFChars(uuid, 0);
+    bool ipV6EnabledNative = (bool) ipV6Enabled;
 
-    launchClient(uuidNative);
+    launchClient(uuidNative, ipV6EnabledNative);
 }
 
 void

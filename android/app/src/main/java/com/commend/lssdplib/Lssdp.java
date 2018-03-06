@@ -37,9 +37,9 @@ public class Lssdp {
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
-    public native void startLssdpClient(String uuid);
+    public native void startLssdpClient(String uuid, boolean ipV6Enabled);
     public native void stopLssdpClient();
-    public native int startLssdpService(String uuid, String ipv6Address, String ipv4Address, int localPort);
+    public native int startLssdpService(String uuid, String ipv6Address, String ipv4Address, int localPort, boolean ipV6Enabled);
     public native void stopLssdpService();
 
     /**

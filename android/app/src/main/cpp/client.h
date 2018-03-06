@@ -6,6 +6,9 @@
 #include <list>
 #include "lssdp.h"
 
+#define UPNP_IPV6   "FF02::C"
+#define UPNP_IPV4   "239.255.255.250"
+
 typedef enum {PAIRED, UNREACHABLE} t_state;
 
 
