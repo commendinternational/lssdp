@@ -863,8 +863,8 @@ int lssdp_neighbor_check_timeout(lssdp_ctx * lssdp) {
 		}
 
 		is_changed = true;
-		fprintf(stderr,"remove timeout SSDP neighbor: %s (%s) (%lldms) maxAGE:%d\n",
-		        nbr->sm_id, nbr->location, pass_time, nbr->max_age);
+        fprintf(stderr,"remove timeout SSDP neighbor: (%s) (%lldms) maxAGE:%d\n",
+		        nbr->location, pass_time, nbr->max_age);
 
 		if (prev == NULL) {
 			// it's first neighbor in list
