@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = "lssdp"
-  s.version          = "1.0.1"
+  s.version          = "1.0.6"
   s.summary          = "The open source lssdp library."
   s.homepage         = "https://github.com/commendinternational/lssdp"
   s.license          = 'Code is MIT.'
