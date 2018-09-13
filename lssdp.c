@@ -307,6 +307,73 @@ int lssdp_socket_read(lssdp_ctx * lssdp) {
 	return 0;
 }
 
+// 04.1. lssdp_socket_read + m-search notify response
+int lssdp_socket_read_custom_response(lssdp_ctx * lssdp) {
+    if (lssdp == NULL) {
+        lssdp_error("lssdp should not be NULL\n");
+        return -1;
+    }
+   
+    // check socket and port
+    if (lssdp->sock < 0) {
+        lssdp_error("SSDP socket (%d) has not been setup.\n", lssdp->sock);
+        return -1;
+    }
+   
+    char buffer[LSSDP_BUFFER_LEN] = {};
+    struct sockaddr_in6 address = {};
+    socklen_t address_len = sizeof(struct sockaddr_in6);
+   
+    ssize_t recv_len = recvfrom(lssdp->sock, buffer, sizeof(buffer), 0,
+                                (struct sockaddr *)&address, &address_len);
+    if (recv_len == -1) {
+        //lssdp_error("recvfrom fd %d failed, errno = %s (%d)\n", lssdp->sock, strerror(errno), errno);
+        return -1;
+    }
+   
+    // parse SSDP packet to struct
+    lssdp_packet packet = {};
+    if (lssdp_packet_parser(buffer, recv_len, &packet) != 0) {
+        return 0;
+    }
+   
+    // check search target
+    if (strcmp(packet.st, lssdp->header.search_target) != 0) {
+        // search target is not match
+        if (lssdp->debug) {
+            lssdp_info("RECV <- %-8s   not match with %-14s %s\n", packet.method,
+                       lssdp->header.search_target, packet.location);
+        }
+        return 0;
+    }
+   
+    // M-SEARCH: different back code, to send custom response back
+    if (strcmp(packet.method, MSEARCH) == 0) {
+        lssdp_info("Sending response\n");
+        return 1;
+    }
+   
+    if (strcmp(packet.method, NOTIFY) == 0) {
+        if(strcmp("ssdp:byebye",packet.nts) == 0) {
+            packet.max_age = 0;
+            neighbor_list_add(lssdp, packet);
+        } else {
+            neighbor_list_add(lssdp, packet);
+        }
+    }
+   
+    if (strcmp(packet.method, RESPONSE) == 0) {
+        neighbor_list_add(lssdp, packet);
+    }
+   
+    // invoke packet received callback
+    if (lssdp->packet_received_callback != NULL) {
+        lssdp->packet_received_callback(lssdp, buffer, recv_len);
+    }
+   
+    return 0;
+}
+
 // 05. lssdp_send_msearch
 int lssdp_send_msearch(lssdp_ctx * lssdp) {
 	if (lssdp == NULL) {
