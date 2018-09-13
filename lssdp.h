@@ -134,6 +134,7 @@ int lssdp_socket_close(lssdp_ctx * lssdp);
  *         < 0      failed
  */
 int lssdp_socket_read(lssdp_ctx * lssdp);
+int lssdp_socket_read_custom_response(lssdp_ctx * lssdp);
 int lssdp_send_msearch(lssdp_ctx * lssdp);
 int lssdp_send_byebye(lssdp_ctx * lssdp);
 int lssdp_send_notify(lssdp_ctx * lssdp);
