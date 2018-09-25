@@ -63,6 +63,13 @@ public class Lssdp {
         }
     }
 
+    private void deviceSendByeBye(String uuid) {
+
+        for (LssdpListener lssdpListener : lssdpListeners) {
+            lssdpListener.OnDeviceSendByeBye(uuid);
+        }
+    }
+
     /**
      * Add listener to Lssdp.
      * @param lssdpListener listener to be added
@@ -89,6 +96,8 @@ public class Lssdp {
         void OnDeviceFound(String device);
 
         void OnDeviceListClear();
+
+        void OnDeviceSendByeBye(String uuid);
     }
 
 }

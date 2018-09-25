@@ -26,6 +26,7 @@ static bool done = false; // flag to request end of main loop thread
 
 void deviceDiscovered(const char * device);
 void clearDevicesDiscovered();
+int ssdp_client_byebye_callback(lssdp_ctx * lssdp, const lssdp_packet packet);
 
 static void android_log(const char * file, const char * tag, int level,
                         int line,
@@ -82,6 +83,17 @@ int neighbor_list_changed(lssdp_ctx *ctx) {
     return 0;
 }
 
+int ssdp_client_byebye_callback(lssdp_ctx * lssdp, const lssdp_packet packet) {
+    
+    if(done) {
+        return 0;
+    }
+    
+    deviceSendByeBye(packet.usn);
+
+    return 0;
+}
+
 
 int launchClient(const char* uuid, bool ipV6Enabled) {
 
@@ -93,6 +105,7 @@ int launchClient(const char* uuid, bool ipV6Enabled) {
     lssdp_init(&lssdp);
 
     lssdp.neighbor_list_changed_callback  = neighbor_list_changed;
+    lssdp.neighbor_list_byebye_callback = &ssdp_client_byebye_callback;
 
     //  Interface
     lssdp.config.MULTICAST_IF = "wlan0";
@@ -139,7 +152,7 @@ int launchClient(const char* uuid, bool ipV6Enabled) {
         FD_SET(lssdp.sock, &fs);
         struct timeval tv;
         tv.tv_sec = 0;
-        tv.tv_usec = (RESEND_INTERVAL * 10) * 1000;
+        tv.tv_usec = 10000;
 
         if(lssdp_neighbor_check_timeout(&lssdp) != 0) {
             return EXIT_FAILURE;
@@ -150,6 +163,8 @@ int launchClient(const char* uuid, bool ipV6Enabled) {
             if(lssdp_socket_read(&lssdp) != 0) {
                 return EXIT_FAILURE;
             }
+        } else if (ret < 0) {
+            return EXIT_FAILURE;
         }
     }
 
@@ -179,6 +194,18 @@ void deviceDiscovered(const char * device) {
     jenv->DeleteLocalRef(cls);
     jenv->DeleteLocalRef(deviceString);
 }
+
+void deviceSendByeBye(const char * uuid) {
+
+    jclass cls = jenv->GetObjectClass(jobj);
+    jmethodID mid = jenv->GetMethodID(cls, "deviceSendByeBye", "(Ljava/lang/String;)V");
+    jstring deviceString = jenv->NewStringUTF(uuid);
+    jenv->CallVoidMethod(jobj, mid, deviceString);
+
+    jenv->DeleteLocalRef(cls);
+    jenv->DeleteLocalRef(deviceString);
+}
+
 
 extern "C" {
 void

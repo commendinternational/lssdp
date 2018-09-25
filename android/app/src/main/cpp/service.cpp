@@ -73,8 +73,10 @@ int launchServer(const char* uuid, const char* ipv6Address, const char* ipv4Addr
     }
     lssdp.port = 1900;
 
+    lssdp.neighbor_list_byebye_callback = NULL;
+
     //  CACHE-CONTROL
-    lssdp.header.max_age = RESEND_INTERVAL;
+    lssdp.header.max_age = 1800;
     //  LOCATION IPv6
     strncpy(lssdp.header.location.prefix,"http://",LSSDP_FIELD_LEN);
     strncpy(lssdp.header.location.domain,ipv4Address,LSSDP_FIELD_LEN);
@@ -107,7 +109,7 @@ int launchServer(const char* uuid, const char* ipv6Address, const char* ipv4Addr
         FD_SET(lssdp.sock, &fs);
         struct timeval tv;
         tv.tv_sec = 0;
-        tv.tv_usec = (RESEND_INTERVAL * 10) * 1000;
+        tv.tv_usec = 10000;
 
         if((get_current_time() - timelast) > RESEND_INTERVAL*1000) {
             timelast = get_current_time();
