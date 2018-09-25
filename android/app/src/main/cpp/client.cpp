@@ -27,6 +27,7 @@ static bool done = false; // flag to request end of main loop thread
 void deviceDiscovered(const char * device);
 void clearDevicesDiscovered();
 int ssdp_client_byebye_callback(lssdp_ctx * lssdp, const lssdp_packet packet);
+void deviceSendByeBye(const char * uuid);
 
 static void android_log(const char * file, const char * tag, int level,
                         int line,
@@ -76,7 +77,10 @@ int neighbor_list_changed(lssdp_ctx *ctx) {
 
     for (nbr = lssdp.neighbor_list; nbr != NULL; nbr = nbr->next) {
 
-        *deviceDetail = NULL;
+        for(int a = 0; a < sizeof(deviceDetail); a++){
+            deviceDetail[a] = 0;
+        }
+        
         deviceDiscovered(strcat(deviceDetail, nbr->location));
     }
 
@@ -89,7 +93,7 @@ int ssdp_client_byebye_callback(lssdp_ctx * lssdp, const lssdp_packet packet) {
         return 0;
     }
     
-    deviceSendByeBye(packet.usn);
+    deviceSendByeBye((const char *)packet.usn);
 
     return 0;
 }
