@@ -60,7 +60,7 @@ static int trim_spaces(const char * string, size_t * start, size_t * end);
 static long long get_current_time(void);
 static int lssdp_log(int level, int line, const char * func,
                      const char * format, ...);
-
+static void notify_byebye(lssdp_ctx * lssdp, const lssdp_packet packet);
 
 void lssdp_init(lssdp_ctx * lssdp) {
     lssdp->config.multicastPort  = "1900";
@@ -70,6 +70,7 @@ void lssdp_init(lssdp_ctx * lssdp) {
     lssdp->header.max_age = 10;
     lssdp->neighbor_list = NULL;
     lssdp->neighbor_list_changed_callback = NULL;
+    lssdp->neighbor_list_byebye_callback = NULL;
     lssdp->packet_received_callback = NULL;
     strncpy(lssdp->header.server, "OS/1.0 LSSDP/1.0", LSSDP_FIELD_LEN);
 }
@@ -293,6 +294,7 @@ int lssdp_socket_read(lssdp_ctx * lssdp) {
         if(strcmp("ssdp:byebye",packet.nts) == 0) {
             packet.max_age = 0;
             neighbor_list_add(lssdp, packet);
+            notify_byebye(lssdp, packet);
         } else {
             neighbor_list_add(lssdp, packet);
         }
@@ -828,6 +830,13 @@ end:
     }
     
     return 0;
+}
+
+static void notify_byebye(lssdp_ctx * lssdp, const lssdp_packet packet) {
+    // invoke byebye callback
+    if (lssdp->neighbor_list_byebye_callback != NULL) {
+        lssdp->neighbor_list_byebye_callback(lssdp, packet);
+    }
 }
 
 

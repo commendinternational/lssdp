@@ -104,6 +104,7 @@ extern "C"
         int (* neighbor_list_changed_callback)     (struct lssdp_ctx * lssdp);
         int (* packet_received_callback)           (struct lssdp_ctx * lssdp,
                                                     const char * packet, size_t packet_len);
+        int (* neighbor_list_byebye_callback)       (struct lssdp_ctx * lssdp, const lssdp_packet packet);
     } lssdp_ctx;
     
     
