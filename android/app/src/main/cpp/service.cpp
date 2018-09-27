@@ -13,7 +13,7 @@
 #include <android/log.h>
 
 
-#define RESEND_INTERVAL 2
+#define RESEND_INTERVAL 6.0
 
 JNIEnv *jenv_service;
 static bool done = false; // flag to request end of main loop thread
@@ -76,7 +76,7 @@ int launchServer(const char* uuid, const char* ipv6Address, const char* ipv4Addr
     lssdp.neighbor_list_byebye_callback = NULL;
 
     //  CACHE-CONTROL
-    lssdp.header.max_age = 1800;
+    lssdp.header.max_age = 120;
     //  LOCATION IPv6
     strncpy(lssdp.header.location.prefix,"http://",LSSDP_FIELD_LEN);
     strncpy(lssdp.header.location.domain,ipv4Address,LSSDP_FIELD_LEN);
@@ -95,6 +95,9 @@ int launchServer(const char* uuid, const char* ipv6Address, const char* ipv4Addr
 
 
     if(lssdp_socket_create(&lssdp) != 0) {
+        return EXIT_FAILURE;
+    }
+    if(lssdp_send_byebye(&lssdp) != 0) {
         return EXIT_FAILURE;
     }
     if(lssdp_send_notify(&lssdp) != 0) {
