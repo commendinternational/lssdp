@@ -100,7 +100,7 @@ int lssdp_socket_create(lssdp_ctx * lssdp) {
     
     
     /* Resolve the multicast group address */
-    hints.ai_family = PF_UNSPEC;
+    hints.ai_family = AF_UNSPEC;
     hints.ai_flags  = AI_NUMERICHOST;
     int status;
     if ((status = getaddrinfo(lssdp->config.ADDR_MULTICAST, NULL, &hints,
@@ -136,14 +136,12 @@ int lssdp_socket_create(lssdp_ctx * lssdp) {
         goto fail_and_close;
     }
     
-#if __APPLE__
     /* lose the pesky "Port already in use" error message */
     if (setsockopt(lssdp->sock,SOL_SOCKET,SO_REUSEPORT,(char*)&yes,
                    sizeof(int)) == -1) {
         lssdp_error("Failed to set socket option\n");
         goto fail_and_close;
     }
-#endif
     
     unsigned char loop = 1;
     setsockopt(lssdp->sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
@@ -489,7 +487,7 @@ static int send_multicast_data(const char * data , lssdp_ctx*lssdp) {
     int loop = 1;
     setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &loop, sizeof(loop))  ;
     
-#if __APPLE__
+#if __APPLE__ || __ANDROID__
     /* Set TTL of multicast packet */
     if ( setsockopt(sock,
                     multicastAddr2->ai_family == PF_INET6 ? IPPROTO_IPV6        : IPPROTO_IP,
